@@ -1,0 +1,174 @@
+.sectionLabel {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: border-color var(--transition);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.status {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+}
+
+.statusActive {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.statusEnded {
+  background: #f0f0f0;
+  color: var(--text-muted);
+}
+
+.pollId {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.question {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.bar {
+  height: 4px;
+  border-radius: 100px;
+  background: var(--border);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.barYes {
+  background: var(--yes);
+  transition: width 600ms ease;
+}
+
+.barNo {
+  background: var(--no);
+  transition: width 600ms ease;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.statYes {
+  font-size: 0.78rem;
+  color: var(--yes);
+  font-weight: 500;
+}
+
+.statNo {
+  font-size: 0.78rem;
+  color: var(--no);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.voteBtn {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid;
+  transition: all var(--transition);
+  letter-spacing: 0.02em;
+}
+
+.voteBtnYes {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.voteBtnYes:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+}
+
+.voteBtnNo {
+  background: var(--danger-light);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.voteBtnNo:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+}
+
+.voteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.votedMsg {
+  font-size: 0.8rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.endedMsg {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.empty {
+  padding: 3rem 0;
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.emptyText {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
