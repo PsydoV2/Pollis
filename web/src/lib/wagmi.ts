@@ -3,6 +3,6 @@ import { hardhat } from "wagmi/chains";
 
 export const config = getDefaultConfig({
   appName: "Pollis",
-  projectId: "f4edbd3beda85831ad555cde68eb0113",
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
   chains: [hardhat],
 });
