@@ -6,31 +6,52 @@ This is a learning project to explore Web3 development with Solidity and Next.js
 
 ---
 
-## Tech Stack
+## Features
 
-| Layer             | Technology               |
-| ----------------- | ------------------------ |
-| Smart Contract    | Solidity ^0.8.28         |
-| Local Blockchain  | Hardhat v3               |
-| Frontend          | Next.js + TypeScript     |
-| Wallet Connection | wagmi + RainbowKit       |
-| Testing           | Mocha + Chai + Ethers.js |
+- **Create polls** — public or private, with a custom duration
+- **Vote on-chain** — one vote per wallet, enforced by the smart contract
+- **Private polls** — share a secret link with only the people you want
+- **Live results** — yes/no vote counts update in real time
+- **Wallet login** — no account, no password, just your MetaMask
 
 ---
 
-## Smart Contract Functions
+## Tech Stack
 
-| Function                         | Description                                               |
-| -------------------------------- | --------------------------------------------------------- |
-| `createPoll(question, duration)` | Create a new poll with a question and duration in seconds |
-| `vote(pollId, voteYes)`          | Vote yes or no on a poll — one vote per wallet            |
-| `getPoll(pollId)`                | Read a poll's current state and results                   |
-| `getPollCount()`                 | Get the total number of polls                             |
+| Layer                  | Technology              |
+| ---------------------- | ----------------------- |
+| Smart Contract         | Solidity ^0.8.28        |
+| Local Blockchain       | Hardhat v3              |
+| Frontend               | Next.js 16 + TypeScript |
+| Wallet Connection      | wagmi + RainbowKit      |
+| Blockchain Interaction | viem + ethers.js        |
+| Testing                | Mocha + Chai            |
 
-**Rules enforced on-chain:**
+---
+
+## Smart Contract
+
+### Functions
+
+| Function                                    | Description                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------ |
+| `createPoll(question, duration, isPrivate)` | Create a poll with a question, duration in seconds, and visibility |
+| `vote(pollId, voteYes)`                     | Vote yes or no on a poll                                           |
+| `getPoll(pollId)`                           | Read a poll's current state and results                            |
+| `getPollCount()`                            | Get the total number of polls                                      |
+
+### Events
+
+| Event                                     | Description                        |
+| ----------------------------------------- | ---------------------------------- |
+| `PollCreated(pollID, creator, isPrivate)` | Emitted when a new poll is created |
+| `Vote(pollID, voter, voteYes)`            | Emitted when a vote is cast        |
+
+### Rules enforced on-chain
 
 - Each wallet can only vote once per poll
-- Votes are rejected after the poll duration has expired
+- Votes are rejected after the poll has expired
+- Private polls are hidden from the public feed — only accessible via direct link
 - All results are publicly verifiable on the blockchain
 
 ---
@@ -56,7 +77,7 @@ npm install
 npx hardhat node
 ```
 
-This starts a local Ethereum node at `http://127.0.0.1:8545` with 20 funded test accounts.
+Starts a local Ethereum node at `http://127.0.0.1:8545` with 20 funded test accounts.
 
 ### Deploy the contract
 
@@ -65,6 +86,8 @@ In a second terminal:
 ```bash
 npx hardhat ignition deploy ignition/modules/Pollis.ts --network localhost
 ```
+
+Copy the deployed address and update `POLLIS_ADDRESS` in `web/src/lib/contract.ts`.
 
 ### Run the frontend
 
@@ -82,18 +105,42 @@ npx hardhat test
 
 ---
 
+## Environment Variables
+
+Create `web/.env.local`:
+
+```
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+```
+
+Get a free Project ID at [cloud.walletconnect.com](https://cloud.walletconnect.com).
+
+---
+
 ## Project Structure
 
 ```
 pollis/
-├── contracts/         # Solidity smart contracts
+├── contracts/              # Solidity smart contracts
 │   └── Pollis.sol
-├── ignition/          # Hardhat deploy scripts
+├── ignition/               # Hardhat deploy scripts
 │   └── modules/
 │       └── Pollis.ts
-├── test/              # Contract tests
+├── test/                   # Contract tests
 │   └── Pollis.ts
-├── web/               # Next.js frontend
+├── web/                    # Next.js frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx
+│   │   │   └── poll/[id]/  # Direct poll page
+│   │   ├── components/
+│   │   │   ├── Header.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── CreatePoll.tsx
+│   │   │   └── PollList.tsx
+│   │   └── lib/
+│   │       ├── contract.ts # ABI + contract address
+│   │       └── wagmi.ts    # wagmi config
 └── hardhat.config.ts
 ```
 
@@ -102,7 +149,3 @@ pollis/
 ## Why Pollis?
 
 Traditional polls rely on a central server — the owner can manipulate results, delete votes, or shut it down. Pollis puts the logic on the blockchain: once a poll is created, nobody (not even the creator) can change the votes. Results are final, transparent, and permanent.
-
----
-
-_Built while learning Web3 development. Feedback welcome._
