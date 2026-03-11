@@ -1,7 +1,8 @@
 "use client";
 import { POLLIS_ADDRESS, POLLIS_ABI } from "@/lib/contract";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { decodeEventLog, type AbiEvent } from "viem";
 import styles from "../styles/CreatePoll.module.css";
 
 const DURATION_OPTIONS = [
@@ -11,14 +12,21 @@ const DURATION_OPTIONS = [
   { label: "1 week", value: 604800 },
 ];
 
+const POLL_CREATED_EVENT = POLLIS_ABI.find(
+  (x) => "name" in x && x.name === "PollCreated",
+) as AbiEvent | undefined;
+
 export default function CreatePoll() {
   const [question, setQuestion] = useState("");
   const [duration, setDuration] = useState(86400);
+  const [isPrivate, setIsPrivate] = useState(false);
 
   const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const {
+    isLoading: isConfirming,
+    isSuccess,
+    data: receipt,
+  } = useWaitForTransactionReceipt({ hash });
 
   const handleCreate = () => {
     if (!question.trim()) return;
@@ -26,11 +34,44 @@ export default function CreatePoll() {
       abi: POLLIS_ABI,
       address: POLLIS_ADDRESS,
       functionName: "createPoll",
-      args: [question, BigInt(duration)],
+      args: [question, BigInt(duration), isPrivate],
     });
   };
 
+  const createdPollId = useMemo(() => {
+    if (!receipt || !POLL_CREATED_EVENT) return null;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: [POLL_CREATED_EVENT],
+          data: log.data,
+          topics: log.topics,
+        });
+        if (decoded.eventName === "PollCreated") {
+          const args = decoded.args as { pollID: bigint };
+          return Number(args.pollID);
+        }
+      } catch {
+        // log belongs to a different event, skip
+      }
+    }
+    return null;
+  }, [receipt]);
+
   const isLoading = isPending || isConfirming;
+  const pollUrl =
+    typeof window !== "undefined" && createdPollId !== null
+      ? `${window.location.origin}/poll/${createdPollId}`
+      : null;
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!pollUrl) return;
+    navigator.clipboard.writeText(pollUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className={styles.container}>
@@ -67,6 +108,23 @@ export default function CreatePoll() {
         </div>
       </div>
 
+      <div className={styles.field}>
+        <button
+          type="button"
+          className={`${styles.toggleBtn} ${
+            isPrivate ? styles.toggleActive : ""
+          }`}
+          onClick={() => setIsPrivate(!isPrivate)}
+        >
+          <span className={styles.toggleIcon}>{isPrivate ? "🔒" : "🌐"}</span>
+          <span className={styles.toggleText}>
+            {isPrivate
+              ? "Private — only people with the link can see this"
+              : "Public — visible to everyone"}
+          </span>
+        </button>
+      </div>
+
       <button
         className={styles.submitBtn}
         onClick={handleCreate}
@@ -79,8 +137,26 @@ export default function CreatePoll() {
           : "Create poll"}
       </button>
 
-      {isSuccess && (
-        <p className={styles.successMsg}>✓ Poll created successfully</p>
+      {isSuccess && createdPollId !== null && (
+        <div className={styles.successBox}>
+          <p className={styles.successMsg}>✓ Poll created</p>
+          {isPrivate && pollUrl && (
+            <div className={styles.linkBox}>
+              <p className={styles.linkLabel}>Share this link:</p>
+              <div className={styles.linkRow}>
+                <code className={styles.linkCode}>{pollUrl}</code>
+                <button
+                  className={`${styles.copyBtn} ${
+                    copied ? styles.copyBtnSuccess : ""
+                  }`}
+                  onClick={handleCopy}
+                >
+                  {copied ? "✓ Copied" : "Copy"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

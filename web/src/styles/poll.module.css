@@ -1,0 +1,178 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 4rem 2rem;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.status {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+}
+
+.statusActive {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.statusEnded {
+  background: #f0f0f0;
+  color: var(--text-muted);
+}
+
+.privateBadge {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.pollId {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.question {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 100px;
+  background: var(--border);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.barYes {
+  background: var(--yes);
+  transition: width 600ms ease;
+}
+
+.barNo {
+  background: var(--no);
+  transition: width 600ms ease;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.statYes {
+  font-size: 0.85rem;
+  color: var(--yes);
+  font-weight: 500;
+}
+
+.statNo {
+  font-size: 0.85rem;
+  color: var(--no);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.voteBtn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid;
+  transition: all var(--transition);
+}
+
+.voteBtnYes {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.voteBtnYes:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+}
+
+.voteBtnNo {
+  background: var(--danger-light);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.voteBtnNo:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+}
+
+.voteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.votedMsg {
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+}
+
+.endedMsg {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.back {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: color var(--transition);
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+  width: 100%;
+}
+
+.back:hover {
+  color: var(--text-primary);
+}
+
+.loading,
+.error {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 0;
+}

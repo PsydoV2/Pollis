@@ -8,6 +8,7 @@ struct Poll {
     uint votesNo;
     address creator;
     uint endsAt;
+    bool isPrivate;
 }
 
 contract Pollis {
@@ -19,25 +20,32 @@ contract Pollis {
     constructor() {
     }
 
-    function createPoll(string calldata question, uint duration) public {
+    event PollCreated(uint pollID, address creator, bool isPrivate);
+
+    function createPoll(string calldata question, uint duration, bool isPrivate) public {
+        uint newId = polls.length;
         polls.push(Poll({
-            pollID: polls.length,
+            pollID: newId,
             question: question,
             votesYes: 0,
             votesNo: 0,
             creator: msg.sender,
-            endsAt: block.timestamp + duration
+            endsAt: block.timestamp + duration,
+            isPrivate: isPrivate
         }));
+
+        emit PollCreated(newId, msg.sender, isPrivate);
     }
 
     function vote(uint pollID, bool voteYes) public {
         require(pollID < polls.length, "Poll does not exist!");
         
         Poll storage poll = polls[pollID];
-                
+        
         require(block.timestamp < poll.endsAt, "Poll has ended!");
         
         require(!hasVoted[pollID][msg.sender], "You can only vote once!");
+        
 
         if (voteYes) {
             poll.votesYes++;
@@ -52,10 +60,8 @@ contract Pollis {
 
     function getPoll(uint pollID) public view returns (Poll memory) {
         require(pollID < polls.length, "Poll does not exist!");
-        
-        Poll storage poll = polls[pollID];
 
-        return poll;
+        return polls[pollID];
     }
 
     function getPollCount() public view returns (uint) {

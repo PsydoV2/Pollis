@@ -120,3 +120,104 @@
   text-align: center;
   font-weight: 500;
 }
+
+/* Append these to your existing CreatePoll.module.css */
+
+.toggleBtn {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  text-align: left;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.toggleBtn:hover {
+  border-color: var(--border-strong);
+}
+
+.toggleActive {
+  background: #fdf6e3;
+  border-color: #d4a017;
+}
+
+.toggleIcon {
+  font-size: 1rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.toggleText {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.successBox {
+  margin-top: 0.75rem;
+}
+
+.linkHint {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.linkBox {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.linkLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.linkRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.linkCode {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyBtn {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.copyBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.copyBtnSuccess {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}

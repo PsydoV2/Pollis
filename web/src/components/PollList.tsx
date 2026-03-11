@@ -17,6 +17,7 @@ type Poll = {
   votesNo: bigint;
   creator: string;
   endsAt: bigint;
+  isPrivate: boolean;
 };
 
 function PollCard({ poll, index }: { poll: Poll; index: number }) {
@@ -31,7 +32,7 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
     abi: POLLIS_ABI,
     functionName: "hasVoted",
     args: address ? [BigInt(index), address] : undefined,
-    query: { enabled: !!address, refetchInterval: 300 },
+    query: { enabled: !!address, refetchInterval: 3000 },
   });
 
   const total = Number(poll.votesYes) + Number(poll.votesNo);
@@ -39,10 +40,8 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
     total > 0 ? Math.round((Number(poll.votesYes) / total) * 100) : 50;
   const noPercent = total > 0 ? 100 - yesPercent : 50;
 
-  const endsAt = new Date(Number(poll.endsAt) * 1000);
   const isEnded = Date.now() > Number(poll.endsAt) * 1000;
   const timeLeft = !isEnded ? formatTimeLeft(Number(poll.endsAt)) : null;
-
   const isLoading = isPending || isConfirming;
   const voted = hasVoted as boolean | undefined;
 
@@ -105,7 +104,6 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
       )}
 
       {voted && <p className={styles.votedMsg}>✓ You voted on this poll</p>}
-
       {isEnded && <p className={styles.endedMsg}>This poll has ended</p>}
     </article>
   );
@@ -124,6 +122,7 @@ export default function PollList() {
     address: POLLIS_ADDRESS,
     abi: POLLIS_ABI,
     functionName: "getPollCount",
+    query: { refetchInterval: 3000 },
   });
 
   const pollIds = pollCount
@@ -136,11 +135,17 @@ export default function PollList() {
       abi: POLLIS_ABI,
       functionName: "getPoll",
       args: [BigInt(id)],
-      query: { refetchInterval: 300 },
     })),
+    query: { refetchInterval: 3000 },
   });
 
-  if (!pollCount || Number(pollCount) === 0) {
+  // Filter out private polls
+  const publicPolls = polls?.filter((poll) => {
+    const data = poll.result as Poll | undefined;
+    return data && !data.isPrivate;
+  });
+
+  if (!pollCount || Number(pollCount) === 0 || publicPolls?.length === 0) {
     return (
       <div className={styles.empty}>
         <p className={styles.emptyTitle}>No polls yet</p>
@@ -152,12 +157,12 @@ export default function PollList() {
   return (
     <div className={styles.list}>
       <div className={styles.sectionLabel}>
-        {Number(pollCount)} poll{Number(pollCount) !== 1 ? "s" : ""}
+        {publicPolls?.length} public poll{publicPolls?.length !== 1 ? "s" : ""}
       </div>
-      {[...(polls ?? [])].reverse().map((poll, i) => {
+      {[...(publicPolls ?? [])].reverse().map((poll) => {
         const data = poll.result as Poll | undefined;
         if (!data) return null;
-        const realIndex = Number(pollCount) - 1 - i;
+        const realIndex = Number(data.pollID);
         return <PollCard key={realIndex} poll={data} index={realIndex} />;
       })}
     </div>
