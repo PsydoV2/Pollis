@@ -61,7 +61,7 @@ export default function CreatePoll() {
   const isLoading = isPending || isConfirming;
   const pollUrl =
     typeof window !== "undefined" && createdPollId !== null
-      ? `${window.location.origin}/poll/${createdPollId}`
+      ? `${window.location.origin}/?poll=${createdPollId}`
       : null;
 
   const [copied, setCopied] = useState(false);

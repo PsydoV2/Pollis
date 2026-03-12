@@ -7,8 +7,7 @@ import {
 } from "wagmi";
 import { POLLIS_ADDRESS, POLLIS_ABI } from "@/lib/contract";
 import { useState } from "react";
-import { use } from "react";
-import styles from "../../../styles/poll.module.css";
+import styles from "../styles/poll.module.css";
 import Link from "next/link";
 
 type Poll = {
@@ -29,12 +28,7 @@ function formatTimeLeft(endsAt: number): string {
   return `in ${Math.floor(diff / 86400)}d`;
 }
 
-export default function PollPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function PollView({ id }: { id: string }) {
   const pollId = BigInt(id);
   const { address } = useAccount();
   const [pendingVote, setPendingVote] = useState<boolean | null>(null);
@@ -78,21 +72,24 @@ export default function PollPage({
 
   if (isLoading) {
     return (
-      <div className={styles.page}>
+      <main className={styles.page}>
         <div className={styles.container}>
           <p className={styles.loading}>Loading poll…</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (isError || !poll) {
     return (
-      <div className={styles.page}>
+      <main className={styles.page}>
         <div className={styles.container}>
           <p className={styles.error}>Poll not found.</p>
+          <Link href="/" className={styles.back}>
+            ← All polls
+          </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -104,7 +101,7 @@ export default function PollPage({
   const timeLeft = !isEnded ? formatTimeLeft(Number(poll.endsAt)) : null;
 
   return (
-    <div className={styles.page}>
+    <main className={styles.page}>
       <div className={styles.container}>
         <div className={styles.meta}>
           <span
@@ -166,6 +163,6 @@ export default function PollPage({
           ← All polls
         </Link>
       </div>
-    </div>
+    </main>
   );
 }
