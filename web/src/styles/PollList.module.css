@@ -157,6 +157,95 @@
   color: var(--text-muted);
 }
 
+.errorMsg {
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0 0.5rem;
+}
+
+.pageBtn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all var(--transition);
+}
+
+.pageBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pageBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.skeletonLine {
+  background: var(--border);
+  border-radius: 4px;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonHeader {
+  height: 18px;
+  width: 30%;
+  margin-bottom: 0.75rem;
+}
+
+.skeletonTitle {
+  height: 22px;
+  width: 85%;
+  margin-bottom: 1.25rem;
+}
+
+.skeletonBar {
+  height: 4px;
+  width: 100%;
+  margin-bottom: 0.6rem;
+}
+
+.skeletonStats {
+  height: 14px;
+  width: 50%;
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 .empty {
   padding: 3rem 0;
 }

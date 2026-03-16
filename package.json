@@ -18,7 +18,11 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:sepolia": "node scripts/deploy.mjs --network sepolia",
+    "deploy:mainnet": "node scripts/deploy.mjs --network mainnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.0.6",

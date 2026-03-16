@@ -19,13 +19,20 @@ const POLL_CREATED_EVENT = POLLIS_ABI.find(
 export default function CreatePoll() {
   const [question, setQuestion] = useState("");
   const [duration, setDuration] = useState(86400);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [isUnlisted, setIsUnlisted] = useState(false);
 
-  const { writeContract, data: hash, isPending } = useWriteContract();
+  const {
+    writeContract,
+    data: hash,
+    isPending,
+    error: writeError,
+  } = useWriteContract();
+
   const {
     isLoading: isConfirming,
     isSuccess,
     data: receipt,
+    error: receiptError,
   } = useWaitForTransactionReceipt({ hash });
 
   const handleCreate = () => {
@@ -34,7 +41,7 @@ export default function CreatePoll() {
       abi: POLLIS_ABI,
       address: POLLIS_ADDRESS,
       functionName: "createPoll",
-      args: [question, BigInt(duration), isPrivate],
+      args: [question, BigInt(duration), isUnlisted],
     });
   };
 
@@ -73,13 +80,18 @@ export default function CreatePoll() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const txError = writeError ?? receiptError;
+
   return (
     <div className={styles.container}>
       <div className={styles.sectionLabel}>New poll</div>
 
       <div className={styles.field}>
-        <label className={styles.label}>Question</label>
+        <label className={styles.label} htmlFor="poll-question">
+          Question
+        </label>
         <textarea
+          id="poll-question"
           className={styles.textarea}
           placeholder="What do you want to ask?"
           value={question}
@@ -101,6 +113,7 @@ export default function CreatePoll() {
               }`}
               onClick={() => setDuration(opt.value)}
               type="button"
+              aria-pressed={duration === opt.value}
             >
               {opt.label}
             </button>
@@ -112,14 +125,22 @@ export default function CreatePoll() {
         <button
           type="button"
           className={`${styles.toggleBtn} ${
-            isPrivate ? styles.toggleActive : ""
+            isUnlisted ? styles.toggleActive : ""
           }`}
-          onClick={() => setIsPrivate(!isPrivate)}
+          onClick={() => setIsUnlisted(!isUnlisted)}
+          aria-pressed={isUnlisted}
+          aria-label={
+            isUnlisted
+              ? "Switch to public poll"
+              : "Switch to unlisted poll"
+          }
         >
-          <span className={styles.toggleIcon}>{isPrivate ? "🔒" : "🌐"}</span>
+          <span className={styles.toggleIcon}>
+            {isUnlisted ? "🔒" : "🌐"}
+          </span>
           <span className={styles.toggleText}>
-            {isPrivate
-              ? "Private — only people with the link can see this"
+            {isUnlisted
+              ? "Unlisted — only people with the link can see this"
               : "Public — visible to everyone"}
           </span>
         </button>
@@ -129,6 +150,7 @@ export default function CreatePoll() {
         className={styles.submitBtn}
         onClick={handleCreate}
         disabled={isLoading || !question.trim()}
+        aria-busy={isLoading}
       >
         {isPending
           ? "Confirm in wallet…"
@@ -137,10 +159,16 @@ export default function CreatePoll() {
           : "Create poll"}
       </button>
 
+      {txError && (
+        <p className={styles.errorMsg} role="alert">
+          {txError.message.split("\n")[0]}
+        </p>
+      )}
+
       {isSuccess && createdPollId !== null && (
         <div className={styles.successBox}>
           <p className={styles.successMsg}>✓ Poll created</p>
-          {isPrivate && pollUrl && (
+          {isUnlisted && pollUrl && (
             <div className={styles.linkBox}>
               <p className={styles.linkLabel}>Share this link:</p>
               <div className={styles.linkRow}>
@@ -150,6 +178,7 @@ export default function CreatePoll() {
                     copied ? styles.copyBtnSuccess : ""
                   }`}
                   onClick={handleCopy}
+                  aria-label="Copy shareable link"
                 >
                   {copied ? "✓ Copied" : "Copy"}
                 </button>

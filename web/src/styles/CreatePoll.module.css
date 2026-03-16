@@ -221,3 +221,10 @@
   color: var(--accent);
   background: var(--accent-light);
 }
+
+.errorMsg {
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--danger);
+  line-height: 1.4;
+}

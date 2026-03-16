@@ -1,14 +1,18 @@
 "use client";
 import {
   useReadContract,
-  useReadContracts,
   useWriteContract,
   useWaitForTransactionReceipt,
   useAccount,
+  useWatchContractEvent,
 } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
 import { POLLIS_ADDRESS, POLLIS_ABI } from "@/lib/contract";
 import { useState } from "react";
 import styles from "../styles/PollList.module.css";
+import PollSkeleton from "./PollSkeleton";
+
+const PAGE_SIZE = 10;
 
 type Poll = {
   pollID: bigint;
@@ -17,14 +21,19 @@ type Poll = {
   votesNo: bigint;
   creator: string;
   endsAt: bigint;
-  isPrivate: boolean;
+  isUnlisted: boolean;
 };
 
 function PollCard({ poll, index }: { poll: Poll; index: number }) {
   const { address } = useAccount();
   const [pendingVote, setPendingVote] = useState<boolean | null>(null);
 
-  const { writeContract, data: hash, isPending } = useWriteContract();
+  const {
+    writeContract,
+    data: hash,
+    isPending,
+    error: voteError,
+  } = useWriteContract();
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
   const { data: hasVoted } = useReadContract({
@@ -32,7 +41,7 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
     abi: POLLIS_ABI,
     functionName: "hasVoted",
     args: address ? [BigInt(index), address] : undefined,
-    query: { enabled: !!address, refetchInterval: 3000 },
+    query: { enabled: !!address },
   });
 
   const total = Number(poll.votesYes) + Number(poll.votesNo);
@@ -46,6 +55,7 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
   const voted = hasVoted as boolean | undefined;
 
   const handleVote = (voteYes: boolean) => {
+    if (isLoading) return;
     setPendingVote(voteYes);
     writeContract({
       abi: POLLIS_ABI,
@@ -56,7 +66,7 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
   };
 
   return (
-    <article className={styles.card}>
+    <article className={styles.card} aria-label={poll.question}>
       <div className={styles.cardHeader}>
         <span
           className={`${styles.status} ${
@@ -70,16 +80,20 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
 
       <h2 className={styles.question}>{poll.question}</h2>
 
-      <div className={styles.bar}>
+      <div
+        className={styles.bar}
+        role="img"
+        aria-label={`${yesPercent}% Yes, ${noPercent}% No`}
+      >
         <div className={styles.barYes} style={{ width: `${yesPercent}%` }} />
         <div className={styles.barNo} style={{ width: `${noPercent}%` }} />
       </div>
 
       <div className={styles.stats}>
-        <span className={styles.statYes}>
+        <span className={styles.statYes} aria-live="polite">
           {poll.votesYes.toString()} Yes ({yesPercent}%)
         </span>
-        <span className={styles.statNo}>
+        <span className={styles.statNo} aria-live="polite">
           {poll.votesNo.toString()} No ({noPercent}%)
         </span>
       </div>
@@ -90,6 +104,8 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
             className={`${styles.voteBtn} ${styles.voteBtnYes}`}
             onClick={() => handleVote(true)}
             disabled={isLoading}
+            aria-label="Vote yes on this poll"
+            aria-busy={isLoading}
           >
             {isLoading && pendingVote === true ? "Confirming…" : "Vote Yes"}
           </button>
@@ -97,10 +113,18 @@ function PollCard({ poll, index }: { poll: Poll; index: number }) {
             className={`${styles.voteBtn} ${styles.voteBtnNo}`}
             onClick={() => handleVote(false)}
             disabled={isLoading}
+            aria-label="Vote no on this poll"
+            aria-busy={isLoading}
           >
             {isLoading && pendingVote === false ? "Confirming…" : "Vote No"}
           </button>
         </div>
+      )}
+
+      {voteError && (
+        <p className={styles.errorMsg} role="alert">
+          {voteError.message.split("\n")[0]}
+        </p>
       )}
 
       {voted && <p className={styles.votedMsg}>✓ You voted on this poll</p>}
@@ -118,34 +142,60 @@ function formatTimeLeft(endsAt: number): string {
 }
 
 export default function PollList() {
+  const [page, setPage] = useState(0);
+  const queryClient = useQueryClient();
+
   const { data: pollCount } = useReadContract({
     address: POLLIS_ADDRESS,
     abi: POLLIS_ABI,
     functionName: "getPollCount",
-    query: { refetchInterval: 3000 },
   });
 
-  const pollIds = pollCount
-    ? Array.from({ length: Number(pollCount) }, (_, i) => i)
-    : [];
+  const count = Number(pollCount ?? 0n);
+  const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+  const from = Math.max(0, count - (page + 1) * PAGE_SIZE);
+  const batchSize = Math.min(PAGE_SIZE, count - page * PAGE_SIZE);
 
-  const { data: polls } = useReadContracts({
-    contracts: pollIds.map((id) => ({
-      address: POLLIS_ADDRESS,
-      abi: POLLIS_ABI,
-      functionName: "getPoll",
-      args: [BigInt(id)],
-    })),
-    query: { refetchInterval: 3000 },
+  const { data: batchRaw } = useReadContract({
+    address: POLLIS_ADDRESS,
+    abi: POLLIS_ABI,
+    functionName: "getPollsBatch",
+    args: [BigInt(from), BigInt(Math.max(0, batchSize))],
+    query: { enabled: count > 0 },
   });
 
-  // Filter out private polls
-  const publicPolls = polls?.filter((poll) => {
-    const data = poll.result as Poll | undefined;
-    return data && !data.isPrivate;
+  // Invalidate all queries on new polls or votes — WebSocket on hardhat,
+  // fallback polling on other networks (handled by wagmi transport config)
+  useWatchContractEvent({
+    address: POLLIS_ADDRESS,
+    abi: POLLIS_ABI,
+    eventName: "PollCreated",
+    onLogs: () => queryClient.invalidateQueries(),
   });
 
-  if (!pollCount || Number(pollCount) === 0 || publicPolls?.length === 0) {
+  useWatchContractEvent({
+    address: POLLIS_ADDRESS,
+    abi: POLLIS_ABI,
+    eventName: "Vote",
+    onLogs: () => queryClient.invalidateQueries(),
+  });
+
+  const publicPolls = ((batchRaw as Poll[] | undefined) ?? [])
+    .filter((p) => !p.isUnlisted)
+    .reverse();
+
+  // Still loading initial data — show skeletons
+  if (pollCount === undefined) {
+    return (
+      <div className={styles.list}>
+        {[0, 1, 2].map((i) => (
+          <PollSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (count === 0 || publicPolls.length === 0) {
     return (
       <div className={styles.empty}>
         <p className={styles.emptyTitle}>No polls yet</p>
@@ -157,14 +207,37 @@ export default function PollList() {
   return (
     <div className={styles.list}>
       <div className={styles.sectionLabel}>
-        {publicPolls?.length} public poll{publicPolls?.length !== 1 ? "s" : ""}
+        {count} poll{count !== 1 ? "s" : ""}
       </div>
-      {[...(publicPolls ?? [])].reverse().map((poll) => {
-        const data = poll.result as Poll | undefined;
-        if (!data) return null;
-        const realIndex = Number(data.pollID);
-        return <PollCard key={realIndex} poll={data} index={realIndex} />;
+
+      {publicPolls.map((poll) => {
+        const realIndex = Number(poll.pollID);
+        return <PollCard key={realIndex} poll={poll} index={realIndex} />;
       })}
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageBtn}
+            onClick={() => setPage((p) => p - 1)}
+            disabled={page === 0}
+            aria-label="Previous page"
+          >
+            ← Prev
+          </button>
+          <span className={styles.pageInfo} aria-live="polite">
+            Page {page + 1} of {totalPages}
+          </span>
+          <button
+            className={styles.pageBtn}
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page >= totalPages - 1}
+            aria-label="Next page"
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

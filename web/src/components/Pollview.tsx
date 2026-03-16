@@ -4,7 +4,9 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
   useAccount,
+  useWatchContractEvent,
 } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
 import { POLLIS_ADDRESS, POLLIS_ABI } from "@/lib/contract";
 import { useState } from "react";
 import styles from "../styles/poll.module.css";
@@ -17,7 +19,7 @@ type Poll = {
   votesNo: bigint;
   creator: string;
   endsAt: bigint;
-  isPrivate: boolean;
+  isUnlisted: boolean;
 };
 
 function formatTimeLeft(endsAt: number): string {
@@ -32,6 +34,7 @@ export default function PollView({ id }: { id: string }) {
   const pollId = BigInt(id);
   const { address } = useAccount();
   const [pendingVote, setPendingVote] = useState<boolean | null>(null);
+  const queryClient = useQueryClient();
 
   const {
     data: pollRaw,
@@ -42,7 +45,6 @@ export default function PollView({ id }: { id: string }) {
     abi: POLLIS_ABI,
     functionName: "getPoll",
     args: [pollId],
-    query: { refetchInterval: 3000 },
   });
 
   const { data: hasVoted } = useReadContract({
@@ -50,17 +52,31 @@ export default function PollView({ id }: { id: string }) {
     abi: POLLIS_ABI,
     functionName: "hasVoted",
     args: address ? [pollId, address] : undefined,
-    query: { enabled: !!address, refetchInterval: 3000 },
+    query: { enabled: !!address },
   });
 
-  const { writeContract, data: hash, isPending } = useWriteContract();
+  const {
+    writeContract,
+    data: hash,
+    isPending,
+    error: voteError,
+  } = useWriteContract();
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
+
+  // Refresh poll data in real time via events
+  useWatchContractEvent({
+    address: POLLIS_ADDRESS,
+    abi: POLLIS_ABI,
+    eventName: "Vote",
+    onLogs: () => queryClient.invalidateQueries(),
+  });
 
   const poll = pollRaw as Poll | undefined;
   const voted = hasVoted as boolean | undefined;
   const isLoadingVote = isPending || isConfirming;
 
   const handleVote = (voteYes: boolean) => {
+    if (isLoadingVote) return;
     setPendingVote(voteYes);
     writeContract({
       abi: POLLIS_ABI,
@@ -74,7 +90,11 @@ export default function PollView({ id }: { id: string }) {
     return (
       <main className={styles.page}>
         <div className={styles.container}>
-          <p className={styles.loading}>Loading poll…</p>
+          <div className={styles.skeletonPoll}>
+            <div className={styles.skeletonLine} />
+            <div className={styles.skeletonTitle} />
+            <div className={styles.skeletonBar} />
+          </div>
         </div>
       </main>
     );
@@ -111,24 +131,28 @@ export default function PollView({ id }: { id: string }) {
           >
             {isEnded ? "Ended" : `Ends ${timeLeft}`}
           </span>
-          {poll.isPrivate && (
-            <span className={styles.privateBadge}>🔒 Private</span>
+          {poll.isUnlisted && (
+            <span className={styles.unlistedBadge}>🔒 Unlisted</span>
           )}
           <span className={styles.pollId}>#{Number(poll.pollID) + 1}</span>
         </div>
 
         <h1 className={styles.question}>{poll.question}</h1>
 
-        <div className={styles.bar}>
+        <div
+          className={styles.bar}
+          role="img"
+          aria-label={`${yesPercent}% Yes, ${noPercent}% No`}
+        >
           <div className={styles.barYes} style={{ width: `${yesPercent}%` }} />
           <div className={styles.barNo} style={{ width: `${noPercent}%` }} />
         </div>
 
         <div className={styles.stats}>
-          <span className={styles.statYes}>
+          <span className={styles.statYes} aria-live="polite">
             {poll.votesYes.toString()} Yes ({yesPercent}%)
           </span>
-          <span className={styles.statNo}>
+          <span className={styles.statNo} aria-live="polite">
             {poll.votesNo.toString()} No ({noPercent}%)
           </span>
         </div>
@@ -139,6 +163,8 @@ export default function PollView({ id }: { id: string }) {
               className={`${styles.voteBtn} ${styles.voteBtnYes}`}
               onClick={() => handleVote(true)}
               disabled={isLoadingVote}
+              aria-label="Vote yes on this poll"
+              aria-busy={isLoadingVote}
             >
               {isLoadingVote && pendingVote === true
                 ? "Confirming…"
@@ -148,12 +174,20 @@ export default function PollView({ id }: { id: string }) {
               className={`${styles.voteBtn} ${styles.voteBtnNo}`}
               onClick={() => handleVote(false)}
               disabled={isLoadingVote}
+              aria-label="Vote no on this poll"
+              aria-busy={isLoadingVote}
             >
               {isLoadingVote && pendingVote === false
                 ? "Confirming…"
                 : "Vote No"}
             </button>
           </div>
+        )}
+
+        {voteError && (
+          <p className={styles.errorMsg} role="alert">
+            {voteError.message.split("\n")[0]}
+          </p>
         )}
 
         {voted && <p className={styles.votedMsg}>✓ You voted on this poll</p>}

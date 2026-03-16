@@ -12,7 +12,7 @@ function HomeInner() {
 
 export default function HomeClient() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div style={{ minHeight: "60vh" }} />}>
       <HomeInner />
     </Suspense>
   );
