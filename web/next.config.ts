@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   output: "export",
   images: { unoptimized: true },
   trailingSlash: true,
+  serverExternalPackages: ["@coinbase/cdp-sdk"],
 };
 
 export default nextConfig;
